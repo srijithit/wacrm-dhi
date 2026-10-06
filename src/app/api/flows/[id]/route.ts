@@ -116,7 +116,10 @@ export async function PUT(
     )
   }
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : guard.supabase
 
   // Update the flow row first — the body may not include `nodes` (a
   // header-only save for editing the trigger config without touching
@@ -200,12 +203,17 @@ export async function DELETE(
   const guard = await requireOwnership(id)
   if (!guard.ok) return NextResponse.json(guard.body, { status: guard.status })
 
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : guard.supabase
+
   // CASCADE on flow_nodes / flow_runs / flow_run_events handles the
   // children. Active runs end abruptly — there's no graceful "drain"
   // mechanism in v1, but that's intentional: deleting a flow is a
   // deliberate destructive action and the partial unique index will
   // free up the contact for new triggers immediately.
-  const { error } = await supabaseAdmin().from('flows').delete().eq('id', id)
+  const { error } = await admin.from('flows').delete().eq('id', id)
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

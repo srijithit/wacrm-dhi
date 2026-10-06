@@ -278,11 +278,14 @@ export function TemplateManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildSubmitPayload()),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(
           data?.error || t(isEdit ? 'editFailedHttp' : 'submitFailedHttp', { status: res.status }),
         );
+      }
+      if (!data) {
+        throw new Error('Invalid response from server');
       }
       // Refresh first, then close — re-opening the dialog
       // immediately should not show a stale list.
@@ -312,9 +315,12 @@ export function TemplateManager() {
     setSyncing(true);
     try {
       const res = await fetch('/api/whatsapp/templates/sync', { method: 'POST' });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(data?.error || `Sync failed (HTTP ${res.status})`);
+      }
+      if (!data) {
+        throw new Error('Invalid response from server');
       }
       toast.success(
         t('toastSyncCount', { total: data.total }) +

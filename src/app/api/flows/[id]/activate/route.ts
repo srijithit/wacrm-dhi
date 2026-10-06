@@ -63,7 +63,10 @@ export async function POST(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : supabase
 
   if (status === 'active') {
     // Re-load with the full payload the validator needs.

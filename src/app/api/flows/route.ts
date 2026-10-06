@@ -96,7 +96,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : supabase
 
   // -------- Template clone path --------
   if (body.template_slug) {

@@ -192,3 +192,31 @@ describe('generateReply — Anthropic', () => {
     expect(body.messages).toHaveLength(1)
   })
 })
+
+describe('generateReply with gemini', () => {
+  it('calls Google Gemini endpoint with bearer token and parses completion', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        choices: [{ message: { content: 'Hello from Gemini!' } }],
+        usage: { prompt_tokens: 25, completion_tokens: 5, total_tokens: 30 },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'gemini', apiKey: 'AQ-test', model: 'gemini-2.5-flash' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Hi' }],
+    })
+
+    expect(res).toEqual({
+      text: 'Hello from Gemini!',
+      handoff: false,
+      usage: { promptTokens: 25, completionTokens: 5, totalTokens: 30 },
+    })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('generativelanguage.googleapis.com')
+    expect(opts.headers.Authorization).toBe('Bearer AQ-test')
+  })
+})
+

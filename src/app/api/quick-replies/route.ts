@@ -60,7 +60,12 @@ export async function POST(request: Request) {
     content_text = text
   }
 
-  const { data, error } = await supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const client = isRealServiceRole ? supabaseAdmin() : ctx.supabase
+
+  const { data, error } = await client
     .from('quick_replies')
     .insert({
       account_id: ctx.accountId,

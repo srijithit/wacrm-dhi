@@ -136,9 +136,8 @@ export function WhatsAppConfig() {
     useState<RegistrationProbe | null>(null);
 
   const webhookUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/api/whatsapp/webhook`
-      : '';
+    process.env.NEXT_PUBLIC_WEBHOOK_URL ||
+    'https://api-wappilot.dhigrowth.com/webhook';
 
   const fetchConfig = useCallback(async (acctId: string) => {
     setLoading(true);

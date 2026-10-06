@@ -37,14 +37,19 @@ export async function GET(
   // Reading is open to any member (`automations_select` has no role
   // floor) but is still account-scoped.
   let accountId: string
+  let client: unknown
   try {
     const ctx = await getCurrentAccount()
     accountId = ctx.accountId
+    client = ctx.supabase
   } catch (err) {
     return toErrorResponse(err)
   }
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : ((client as ReturnType<typeof supabaseAdmin>) ?? supabaseAdmin())
   const { data: automation, error } = await admin
     .from('automations')
     .select('*')
@@ -55,7 +60,7 @@ export async function GET(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!automation) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const steps = await loadStepsTree(id)
+  const steps = await loadStepsTree(id, admin)
   return NextResponse.json({ automation, steps })
 }
 
@@ -69,9 +74,11 @@ export async function PATCH(
   // requires `agent`, but this route mutates via the service-role client
   // which bypasses RLS, so enforce the role here.
   let accountId: string
+  let client: unknown
   try {
     const ctx = await requireRole('agent')
     accountId = ctx.accountId
+    client = ctx.supabase
   } catch (err) {
     return toErrorResponse(err)
   }
@@ -79,7 +86,10 @@ export async function PATCH(
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : ((client as ReturnType<typeof supabaseAdmin>) ?? supabaseAdmin())
 
   // Tenancy check before we touch anything. Load the fields we need
   // to compute the post-patch "effective" state for validation.
@@ -115,7 +125,7 @@ export async function PATCH(
     const mergedTriggerConfig = update.trigger_config ?? existing.trigger_config
     const mergedSteps = Array.isArray(body.steps)
       ? (body.steps as { step_type: string; step_config: Record<string, unknown> }[])
-      : await loadStepsTree(id)
+      : await loadStepsTree(id, admin)
     const issues = [
       ...validateTriggerForActivation(mergedTriggerType, mergedTriggerConfig),
       ...validateStepsForActivation(mergedSteps),
@@ -141,7 +151,7 @@ export async function PATCH(
   }
 
   if (Array.isArray(body.steps)) {
-    const err = await replaceSteps(id, body.steps as BuilderStepInput[])
+    const err = await replaceSteps(id, body.steps as BuilderStepInput[], admin)
     if (err) return NextResponse.json({ error: err }, { status: 500 })
   }
 
@@ -157,14 +167,21 @@ export async function DELETE(
   // Deleting an automation is a write — enforce `agent` (the service-role
   // client below bypasses the agent-gated automations_delete RLS).
   let accountId: string
+  let client: unknown
   try {
     const ctx = await requireRole('agent')
     accountId = ctx.accountId
+    client = ctx.supabase
   } catch (err) {
     return toErrorResponse(err)
   }
 
-  const { error } = await supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : ((client as ReturnType<typeof supabaseAdmin>) ?? supabaseAdmin())
+
+  const { error } = await admin
     .from('automations')
     .delete()
     .eq('id', id)

@@ -104,7 +104,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const admin = supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const admin = isRealServiceRole ? supabaseAdmin() : supabase
   const { data: automation, error: insertErr } = await admin
     .from('automations')
     .insert({
@@ -127,7 +130,7 @@ export async function POST(request: Request) {
   }
 
   if (effectiveSteps && effectiveSteps.length > 0) {
-    const err = await insertSteps(automation.id, effectiveSteps)
+    const err = await insertSteps(automation.id, effectiveSteps, admin)
     if (err) return NextResponse.json({ error: err }, { status: 500 })
   }
 

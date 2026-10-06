@@ -72,7 +72,12 @@ export async function PATCH(
     return NextResponse.json({ ok: true })
   }
 
-  const { error } = await supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const client = isRealServiceRole ? supabaseAdmin() : ctx.supabase
+
+  const { error } = await client
     .from('quick_replies')
     .update(update)
     .eq('id', id)
@@ -93,7 +98,12 @@ export async function DELETE(
     return toErrorResponse(err)
   }
 
-  const { error } = await supabaseAdmin()
+  const isRealServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const client = isRealServiceRole ? supabaseAdmin() : ctx.supabase
+
+  const { error } = await client
     .from('quick_replies')
     .delete()
     .eq('id', id)
