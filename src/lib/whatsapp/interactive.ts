@@ -30,9 +30,8 @@ export interface InteractiveButton {
   title: string
 }
 
-export interface InteractiveButtonsPayload {
-  kind: 'buttons'
-  /** Body text shown above the buttons (≤ 1024 chars). */
+export interface InteractiveBasePayload {
+  /** Body text shown above the buttons/list (≤ 1024 chars). */
   body: string
   /** Optional plain-text header (≤ 60 chars). */
   header?: string
@@ -40,6 +39,10 @@ export interface InteractiveButtonsPayload {
   header_image_url?: string
   /** Optional grey footer line (≤ 60 chars). */
   footer?: string
+}
+
+export interface InteractiveButtonsPayload extends InteractiveBasePayload {
+  kind: 'buttons'
   /** 1–3 buttons. */
   buttons: InteractiveButton[]
 }
@@ -59,11 +62,8 @@ export interface InteractiveListSection {
   rows: InteractiveListRow[]
 }
 
-export interface InteractiveListPayload {
+export interface InteractiveListPayload extends InteractiveBasePayload {
   kind: 'list'
-  body: string
-  header?: string
-  footer?: string
   /** Label of the tap-to-expand button on the message bubble (≤ 20 chars). */
   button_label: string
   /** 1–10 rows TOTAL across all sections. */
