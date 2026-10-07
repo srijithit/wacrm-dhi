@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
-import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+import { getMediaUrl, downloadMedia, sendTypingIndicator } from '@/lib/whatsapp/meta-api'
 import { mirrorInboundMedia } from '@/lib/whatsapp/mirror-inbound-media'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import {
@@ -411,7 +411,8 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
           // Default ON: the column is NOT NULL DEFAULT TRUE, but a row
           // read before migration 039 lands would have it undefined,
           // and losing attachments is the failure mode worth avoiding.
-          config.mirror_inbound_media !== false
+          config.mirror_inbound_media !== false,
+          phoneNumberId
         )
       }
     }
@@ -716,7 +717,8 @@ async function processMessage(
   accessToken: string,
   // Per-account opt-out for the inbound-media mirror (migration 039).
   // See parseMessageContent for what it turns off.
-  mirrorMedia: boolean
+  mirrorMedia: boolean,
+  phoneNumberId?: string
 ) {
   // Phone number OR business-scoped user ID — Meta sends only the
   // latter for a sender who has adopted a WhatsApp username (#519).
@@ -908,6 +910,23 @@ async function processMessage(
   // so the broadcast's `replied_count` advances (via the aggregate
   // trigger installed in migration 003).
   await flagBroadcastReplyIfAny(accountId, contactRecord.id)
+
+  // Send typing indicator to customer via Meta Cloud API so they see "typing..."
+  if (phoneNumberId && message.id) {
+    try {
+      await sendTypingIndicator({
+        phoneNumberId,
+        accessToken,
+        messageId: message.id,
+      })
+      // Small pause so the customer sees the typing animation on WhatsApp before the reply lands
+      if (process.env.NODE_ENV !== 'test') {
+        await new Promise((r) => setTimeout(r, 1200))
+      }
+    } catch (err) {
+      console.warn('[webhook] typing indicator failed:', err)
+    }
+  }
 
   // ============================================================
   // Flow runner dispatch.

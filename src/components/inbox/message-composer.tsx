@@ -118,6 +118,7 @@ interface MessageComposerProps {
   onOpenTemplates: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -140,6 +141,7 @@ export function MessageComposer({
   onOpenTemplates,
   replyTo,
   onClearReply,
+  onTypingChange,
 }: MessageComposerProps) {
   const t = useTranslations("Inbox.composer");
 
@@ -260,6 +262,7 @@ export function MessageComposer({
   const handleDraft = useCallback(async () => {
     if (drafting) return;
     setDrafting(true);
+    onTypingChange?.(true);
     try {
       const res = await fetch("/api/ai/draft", {
         method: "POST",
@@ -295,8 +298,9 @@ export function MessageComposer({
       toast.error(t("aiUnreachable"));
     } finally {
       setDrafting(false);
+      onTypingChange?.(false);
     }
-  }, [drafting, conversationId, adjustHeight, t]);
+  }, [drafting, conversationId, adjustHeight, onTypingChange, t]);
 
   // ---- Interactive message + quick replies --------------------------
 

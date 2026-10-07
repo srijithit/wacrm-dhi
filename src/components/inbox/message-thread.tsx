@@ -54,6 +54,7 @@ import { AiThreadBanner } from "./ai-thread-banner";
 import { buildReplyPreview } from "./reply-quote";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import { contactHandle } from "@/lib/whatsapp/wa-identity";
+import { TypingIndicator } from "./typing-indicator";
 import { toast } from "sonner";
 
 interface ReplyDraft {
@@ -176,6 +177,7 @@ export function MessageThread({
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
   // Purely visual spin state for the manual-refresh button. The actual
   // refetch is fire-and-forget through `onRefresh` (which bumps the
   // parent's resyncToken); the 700ms spin is just feedback so the click
@@ -456,13 +458,13 @@ export function MessageThread({
       });
   }, [conversationId, hasUnread]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages or typing
   useEffect(() => {
     if (scrollRef.current) {
       const el = scrollRef.current;
       el.scrollTop = el.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSend = useCallback(
     async (text: string, replyToId?: string) => {
@@ -923,8 +925,15 @@ export function MessageThread({
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">
-              {contactHandle(contact)}
+            <p className="truncate text-xs text-muted-foreground flex items-center gap-1.5">
+              {isTyping ? (
+                <span className="text-emerald-500 font-medium animate-pulse flex items-center gap-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  typing...
+                </span>
+              ) : (
+                contactHandle(contact)
+              )}
             </p>
           </div>
           {/* Session timer badge — hidden on the narrowest phones so
@@ -1156,6 +1165,11 @@ export function MessageThread({
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="pt-1 pb-2">
+                <TypingIndicator name={displayName} />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1186,6 +1200,7 @@ export function MessageThread({
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
         onClearReply={() => setReplyTo(null)}
+        onTypingChange={setIsTyping}
       />
 
       <TemplatePicker

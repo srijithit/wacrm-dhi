@@ -248,6 +248,7 @@ vi.mock('@/lib/whatsapp/encryption', () => ({
 vi.mock('@/lib/whatsapp/meta-api', () => ({
   getMediaUrl: vi.fn(),
   downloadMedia: vi.fn(),
+  sendTypingIndicator: vi.fn(async () => undefined),
 }))
 vi.mock('@/lib/contacts/dedupe', () => ({
   findExistingContact: vi.fn(async () => ({
