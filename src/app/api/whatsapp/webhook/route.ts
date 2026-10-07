@@ -351,10 +351,17 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
             .limit(1)
             .maybeSingle()
 
-          if (p?.account_id && p?.user_id) {
+          const accountId =
+            p?.account_id ||
+            process.env.VITE_DEFAULT_WORKSPACE_ID ||
+            process.env.DEFAULT_WORKSPACE_ID ||
+            'b0000000-0000-0000-0000-000000000001'
+          const userId = p?.user_id || accountId
+
+          if (accountId && userId) {
             config = {
-              account_id: p.account_id,
-              user_id: p.user_id,
+              account_id: accountId,
+              user_id: userId,
               access_token: process.env.META_WHATSAPP_ACCESS_TOKEN,
               mirror_inbound_media: true,
               phone_number_id: phoneNumberId,
