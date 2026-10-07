@@ -149,6 +149,15 @@ export function InteractiveBuilder({
             </Field>
           </div>
 
+          <Field label="Header Image URL (Optional)">
+            <Input
+              value={value.header_image_url ?? ""}
+              placeholder="https://example.com/banner.jpg"
+              onChange={(e) => setField({ header_image_url: e.target.value || undefined })}
+              className="bg-muted text-foreground"
+            />
+          </Field>
+
           {value.kind === "buttons" ? (
             <ButtonsEditor value={value} onChange={onChange} advanced={advanced} />
           ) : (

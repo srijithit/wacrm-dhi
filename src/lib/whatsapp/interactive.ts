@@ -36,6 +36,8 @@ export interface InteractiveButtonsPayload {
   body: string
   /** Optional plain-text header (≤ 60 chars). */
   header?: string
+  /** Optional header image URL. */
+  header_image_url?: string
   /** Optional grey footer line (≤ 60 chars). */
   footer?: string
   /** 1–3 buttons. */

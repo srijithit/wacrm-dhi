@@ -91,6 +91,7 @@ export async function engineSendInteractive(
       ...common,
       bodyText: payload.body,
       headerText: payload.header,
+      headerImageUrl: payload.header_image_url,
       footerText: payload.footer,
       buttons: payload.buttons,
     })

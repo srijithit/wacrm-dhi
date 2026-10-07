@@ -44,6 +44,16 @@ export function InteractivePreview({
         className,
       )}
     >
+      {payload.header_image_url ? (
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={payload.header_image_url}
+            alt={payload.header || "Header image"}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : null}
       <div className="px-3 py-2">
         {payload.header ? (
           <p className="mb-1 break-words text-sm font-semibold">
