@@ -182,9 +182,13 @@ export async function POST(request: Request) {
       throw err
     }
   } catch (error) {
-    // requireRole throws Unauthorized/Forbidden; toErrorResponse maps
-    // those to 401/403 and collapses anything else to a generic 500.
     console.error('Error in WhatsApp send POST:', error)
+    if (error instanceof SendMessageError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
     return toErrorResponse(error)
   }
 }

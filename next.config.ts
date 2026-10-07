@@ -73,6 +73,24 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
       process.env.VITE_SUPABASE_ANON_KEY ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0anRscXNmd2Frc3lxcnJ1dHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMDM1ODIsImV4cCI6MjEwNDY3OTU4Mn0.FtIIhGCFzaQ5zjkjmHj1qABZ-kucDiArWHAgrg1i01Y",
+    SUPABASE_SERVICE_ROLE_KEY:
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0anRscXNmd2Frc3lxcnJ1dHZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTEwMzU4MiwiZXhwIjoyMTA0Njc5NTgyfQ.LOSNZpeY54kZtZHwjs_cyghsYpeFNB0RVsBo73yMiRI",
+    ENCRYPTION_KEY:
+      process.env.ENCRYPTION_KEY ||
+      "4cd3565b7c720e730fda7651bfcdc3df2d33f3cbc353dde5394cf8d395c6fec6",
+    META_WHATSAPP_ACCESS_TOKEN:
+      process.env.META_WHATSAPP_ACCESS_TOKEN ||
+      "EAAuryEG6S8ABSnQreljnloaIRqykY9iloYMeN8JtfGpYGT9fIo1ANK5hg75TZBG9IrcIQtYf176NRFD5EJ3bXyVFtJnnAqgjc4yY30KZAi9tTPyhjsise4oWQIo7qAAhrL19YwrkgDv6coSh1n2JZCS6Y25cIF0UkZBewRpuHldqPx4nwSA64t4irVVZCu6LrqgZDZD",
+    META_WHATSAPP_PHONE_NUMBER_ID:
+      process.env.META_WHATSAPP_PHONE_NUMBER_ID ||
+      "1272943605907701",
+    META_WHATSAPP_WABA_ID:
+      process.env.META_WHATSAPP_WABA_ID ||
+      "1611291237194962",
+    META_WHATSAPP_VERIFY_TOKEN:
+      process.env.META_WHATSAPP_VERIFY_TOKEN ||
+      "dhigrowth_webhook_secret_2026",
   },
 
   // Emit a self-contained server bundle (.next/standalone) so the

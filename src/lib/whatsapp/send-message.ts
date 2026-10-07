@@ -269,7 +269,20 @@ export async function sendMessageToConversation(
     );
   }
 
-  const accessToken = decrypt(config.access_token);
+  let accessToken: string;
+  try {
+    accessToken = decrypt(config.access_token);
+  } catch (err) {
+    if (process.env.META_WHATSAPP_ACCESS_TOKEN) {
+      accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
+    } else {
+      throw new SendMessageError(
+        'encryption_error',
+        `Failed to decrypt WhatsApp access token: ${err instanceof Error ? err.message : String(err)}`,
+        500
+      );
+    }
+  }
 
   // Self-heal legacy CBC ciphertexts. Fire-and-forget; idempotent.
   if (isLegacyFormat(config.access_token)) {
