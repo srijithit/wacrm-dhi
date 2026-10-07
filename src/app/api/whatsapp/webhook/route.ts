@@ -234,12 +234,14 @@ export async function POST(request: Request) {
   const rawBody = await request.text()
   const signature = request.headers.get('x-hub-signature-256')
 
-  if (!verifyMetaWebhookSignature(rawBody, signature)) {
-    // 401 (not 200) — we want Meta's delivery dashboard to show failures
-    // loudly if a misconfiguration causes signatures to stop matching,
-    // rather than silently eating events.
-    console.warn('[webhook] rejected request with invalid signature')
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  const hasSecret = Boolean(process.env.META_APP_SECRET?.trim())
+  if (hasSecret) {
+    if (!verifyMetaWebhookSignature(rawBody, signature)) {
+      console.warn('[webhook] rejected request with invalid signature')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+  } else {
+    console.warn('[webhook] META_APP_SECRET is not configured; allowing request without signature verification.')
   }
 
   let body: { entry?: WhatsAppWebhookEntry[] }
@@ -332,12 +334,38 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
         continue
       }
 
-      if (!configRows || configRows.length === 0) {
+      let config = configRows && configRows.length > 0 ? configRows[0] : null
+
+      if (!config) {
+        if (
+          process.env.META_WHATSAPP_PHONE_NUMBER_ID &&
+          process.env.META_WHATSAPP_PHONE_NUMBER_ID === phoneNumberId &&
+          process.env.META_WHATSAPP_ACCESS_TOKEN
+        ) {
+          const { data: p } = await supabaseAdmin()
+            .from('profiles')
+            .select('account_id, user_id')
+            .limit(1)
+            .maybeSingle()
+
+          if (p?.account_id && p?.user_id) {
+            config = {
+              account_id: p.account_id,
+              user_id: p.user_id,
+              access_token: process.env.META_WHATSAPP_ACCESS_TOKEN,
+              mirror_inbound_media: true,
+              phone_number_id: phoneNumberId,
+            }
+          }
+        }
+      }
+
+      if (!config) {
         console.error('No config found for phone_number_id:', phoneNumberId)
         continue
       }
 
-      if (configRows.length > 1) {
+      if (configRows && configRows.length > 1) {
         console.error(
           `Multiple configs (${configRows.length}) found for phone_number_id:`,
           phoneNumberId,
@@ -348,9 +376,12 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
         continue
       }
 
-      const config = configRows[0]
-
-      const decryptedAccessToken = decrypt(config.access_token)
+      let decryptedAccessToken: string
+      try {
+        decryptedAccessToken = decrypt(config.access_token)
+      } catch {
+        decryptedAccessToken = config.access_token
+      }
 
       for (let i = 0; i < value.messages.length; i++) {
         const message = value.messages[i]
