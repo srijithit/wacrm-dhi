@@ -57,11 +57,27 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
     };
   }
 
-  const headers = lines[0]
-    .split(',')
-    .map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
+  const rawHeaders = lines[0].split(',');
+  const normalizedHeaders = rawHeaders.map((h) =>
+    h.trim().toLowerCase().replace(/["']/g, '').replace(/[\s_-]/g, '')
+  );
 
-  const phoneIdx = headers.indexOf('phone');
+  const findHeaderIdx = (aliases: string[]) =>
+    normalizedHeaders.findIndex((h) => aliases.includes(h));
+
+  const phoneIdx = findHeaderIdx([
+    'phone',
+    'mobile',
+    'mobilenumber',
+    'phonenumber',
+    'contact',
+    'contactnumber',
+    'whatsapp',
+    'number',
+    'cell',
+    'telephone',
+  ]);
+
   if (phoneIdx === -1) {
     return {
       rows: [],
@@ -71,10 +87,10 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
     };
   }
 
-  const nameIdx = headers.indexOf('name');
-  const emailIdx = headers.indexOf('email');
-  const companyIdx = headers.indexOf('company');
-  const tagsIdx = headers.indexOf('tags');
+  const nameIdx = findHeaderIdx(['name', 'fullname', 'contactname', 'customer', 'customername']);
+  const emailIdx = findHeaderIdx(['email', 'emailaddress', 'mail']);
+  const companyIdx = findHeaderIdx(['company', 'companyname', 'organization', 'business', 'org']);
+  const tagsIdx = findHeaderIdx(['tags', 'tag', 'labels', 'label', 'groups', 'group']);
 
   const rows: ParsedContactRow[] = [];
 

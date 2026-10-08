@@ -36,6 +36,7 @@ import {
   XCircle,
   AlertTriangle,
   Tag,
+  Download,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -427,6 +428,26 @@ export function ImportModal({
     return { unique: names.size, rowsWithTags };
   }, [parsedRows]);
 
+  function handleDownloadSample() {
+    const sampleCsvContent =
+      'phone,name,email,company,tags\n' +
+      '+919876543210,Ramesh Kumar,ramesh@example.com,Acme Corp,"VIP, Customer"\n' +
+      '+919876543211,Priya Sharma,priya@example.com,Tech Solutions,Lead\n' +
+      '+919791471277,Sitarc Testing,info@sitarc.com,Sitarc Lab,"Client, Calibration"\n' +
+      '+15551234567,John Doe,john@example.com,Global Traders,"Partner, Wholesale"\n';
+
+    const blob = new Blob([sampleCsvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'sample_contacts.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Sample contacts CSV downloaded');
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden border-border/80 bg-popover p-0 text-popover-foreground sm:max-w-2xl">
@@ -491,6 +512,20 @@ export function ImportModal({
                 </p>
               </>
             )}
+          </div>
+
+          <div className="flex items-center justify-between pt-0.5">
+            <button
+              type="button"
+              onClick={handleDownloadSample}
+              className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium cursor-pointer"
+            >
+              <Download className="size-3.5" />
+              Download sample CSV template
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              Required: phone (with +country code)
+            </span>
           </div>
 
           <input

@@ -69,21 +69,21 @@ describe('parseContactCsv', () => {
     });
   });
 
-  it('returns empty tagNames when tags column is absent', () => {
-    const csv = `phone,name
-+15551234567,Alice`;
+  it('supports header aliases like Mobile, Full Name, Organization', () => {
+    const csv = `Mobile Number,Full Name,Email Address,Organization,Tag
++919876543210,Ramesh Kumar,ramesh@example.com,Acme Corp,Customer`;
 
     expect(parseContactCsv(csv)).toEqual({
       hasPhoneColumn: true,
-      hasTagsColumn: false,
-      hasCompanyColumn: false,
+      hasTagsColumn: true,
+      hasCompanyColumn: true,
       rows: [
         {
-          phone: '+15551234567',
-          name: 'Alice',
-          email: undefined,
-          company: undefined,
-          tagNames: [],
+          phone: '+919876543210',
+          name: 'Ramesh Kumar',
+          email: 'ramesh@example.com',
+          company: 'Acme Corp',
+          tagNames: ['Customer'],
         },
       ],
     });
