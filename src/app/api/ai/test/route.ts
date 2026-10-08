@@ -43,12 +43,18 @@ export async function POST(request: Request) {
     if (!apiKeyPlain) {
       const { data: existing } = await supabase
         .from('ai_configs')
-        .select('api_key')
+        .select('api_key, provider')
         .eq('account_id', accountId)
         .maybeSingle()
       if (!existing?.api_key) {
         return NextResponse.json(
           { error: 'Enter an API key to test.' },
+          { status: 400 },
+        )
+      }
+      if (existing.provider && existing.provider !== provider) {
+        return NextResponse.json(
+          { error: `The stored API key is for ${existing.provider}, not ${provider}. Please enter your ${provider} API key.` },
           { status: 400 },
         )
       }

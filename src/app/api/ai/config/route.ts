@@ -136,6 +136,9 @@ export async function POST(request: Request) {
     if (rawKey) {
       apiKeyPlain = rawKey
     } else if (existing?.api_key) {
+      if (existing.provider && existing.provider !== provider) {
+        return bad(`API key is required when changing provider from ${existing.provider} to ${provider}.`)
+      }
       try {
         apiKeyPlain = decrypt(existing.api_key)
       } catch {

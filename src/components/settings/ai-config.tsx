@@ -83,6 +83,7 @@ export function AiConfig() {
   // refetches instead of showing the previous account's config. Mirrors
   // the loadedAccountIdRef pattern in whatsapp-config.tsx.
   const loadedAccountIdRef = useRef<string | null>(null);
+  const savedProviderRef = useRef<AiProvider>('openai');
 
   const fetchConfig = useCallback(async () => {
     setLoading(true);
@@ -95,6 +96,7 @@ export function AiConfig() {
       }
       if (data.configured) {
         setConfigured(true);
+        savedProviderRef.current = data.provider;
         setProvider(data.provider);
         setModel(data.model);
         setSystemPrompt(data.system_prompt ?? '');
@@ -133,8 +135,18 @@ export function AiConfig() {
     const isDefaultModel =
       model === AI_PROVIDER_DEFAULT_MODEL.openai ||
       model === AI_PROVIDER_DEFAULT_MODEL.anthropic ||
+      model === AI_PROVIDER_DEFAULT_MODEL.gemini ||
       model.trim() === '';
     if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
+
+    if (next !== savedProviderRef.current) {
+      setApiKey('');
+      setHasStoredKey(false);
+      setKeyEdited(true);
+    } else {
+      setApiKey(hasStoredKey ? MASKED_KEY : '');
+      setKeyEdited(false);
+    }
   };
 
   const keyPayload = () => (keyEdited ? apiKey.trim() : undefined);
@@ -235,8 +247,7 @@ export function AiConfig() {
   if (loading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loadFailed')} {/* Re-using label or a global one, wait, loading is better. Let's use useTranslations from overview or just hardcode Loading... actually I should add loading to aiConfig */}
-        {/* Wait, I didn't add loading to aiConfig. I'll just use loading. */}
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loading')}
       </div>
     );
   }
@@ -315,7 +326,7 @@ export function AiConfig() {
                       setKeyEdited(true);
                     }}
                     onFocus={() => {
-                      if (!keyEdited && hasStoredKey) {
+                      if (apiKey === MASKED_KEY || (!keyEdited && hasStoredKey)) {
                         setApiKey('');
                         setKeyEdited(true);
                       }

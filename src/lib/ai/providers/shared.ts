@@ -59,11 +59,18 @@ export async function providerHttpError(
 ): Promise<AiError> {
   let detail = ''
   try {
-    const body = (await res.json()) as { error?: { message?: string } | string }
-    detail =
-      typeof body?.error === 'string'
-        ? body.error
-        : (body?.error?.message ?? '')
+    const body = (await res.json()) as any
+    if (Array.isArray(body) && body[0]?.error) {
+      detail =
+        typeof body[0].error === 'string'
+          ? body[0].error
+          : (body[0].error?.message ?? '')
+    } else {
+      detail =
+        typeof body?.error === 'string'
+          ? body.error
+          : (body?.error?.message ?? '')
+    }
   } catch {
     // Non-JSON error body — fall back to the status line.
   }
