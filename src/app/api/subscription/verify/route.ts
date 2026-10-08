@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       billingCycle?: string
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || '6wEKCUJ0UXAZm6ESRTaIY4R0'
 
     // If a real signature and secret are present, verify HMAC SHA256
     if (keySecret && razorpay_order_id && razorpay_payment_id && razorpay_signature) {

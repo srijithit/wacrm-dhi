@@ -390,7 +390,7 @@ export function SubscriptionBanner({ userName = "Sri" }: SubscriptionBannerProps
       {/* Modal 1: 3-Tier Upgrade Selection Plan Modal                  */}
       {/* ============================================================ */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-        <DialogContent className="max-w-3xl rounded-3xl p-6 sm:p-8">
+        <DialogContent className="w-full max-w-5xl sm:max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-8">
           <DialogHeader className="text-center sm:text-left">
             <div className="flex items-center justify-between">
               <div>
@@ -434,88 +434,92 @@ export function SubscriptionBanner({ userName = "Sri" }: SubscriptionBannerProps
           </div>
 
           {/* 3 Tier Pricing Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
             {/* Growth Tier */}
             <div className="relative rounded-2xl border-2 border-purple-500/80 bg-purple-50/20 dark:bg-purple-950/20 p-5 flex flex-col justify-between shadow-xs">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-600 text-white px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-600 text-white px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap">
                 Current Plan
               </div>
               <div>
                 <h3 className="font-bold text-lg text-foreground">Growth</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Ideal for growing teams & startups</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-foreground">
+                <div className="mt-4 flex flex-wrap items-baseline gap-1.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight whitespace-nowrap">
                     ₹{PLAN_PRICES.Growth[billingCycle].toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    /{billingCycle === "monthly" ? "mo" : "yr"}
+                  </span>
                 </div>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>2,500 WhatsApp Messages</span>
+                    <span className="leading-snug">2,500 WhatsApp Messages</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>AI Gemini 3.5 Auto-Reply</span>
+                    <span className="leading-snug">AI Gemini 3.5 Auto-Reply</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>5 Shared Team Inboxes</span>
+                    <span className="leading-snug">5 Shared Team Inboxes</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Interactive Buttons & Lists</span>
+                    <span className="leading-snug">Interactive Buttons & Lists</span>
                   </li>
                 </ul>
               </div>
 
               <Button
                 onClick={() => handleSelectPlan("Growth")}
-                className="mt-6 w-full rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs h-10"
+                className="mt-6 w-full rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs h-10 px-3 whitespace-nowrap"
               >
-                Renew Growth via Razorpay
+                Renew Growth
               </Button>
             </div>
 
             {/* Pro Tier */}
             <div className="relative rounded-2xl border border-border bg-card p-5 flex flex-col justify-between hover:border-purple-400 transition-colors shadow-xs">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 text-white px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 text-white px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap">
                 Most Popular
               </div>
               <div>
                 <h3 className="font-bold text-lg text-foreground">Pro Scale</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">High volume messaging & automated flows</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-foreground">
+                <div className="mt-4 flex flex-wrap items-baseline gap-1.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight whitespace-nowrap">
                     ₹{PLAN_PRICES.Pro[billingCycle].toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    /{billingCycle === "monthly" ? "mo" : "yr"}
+                  </span>
                 </div>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>10,000 WhatsApp Messages</span>
+                    <span className="leading-snug">10,000 WhatsApp Messages</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Unlimited AI Assistant Runs</span>
+                    <span className="leading-snug">Unlimited AI Assistant Runs</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>15 Shared Team Inboxes</span>
+                    <span className="leading-snug">15 Shared Team Inboxes</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Visual Flow Builder & Webhooks</span>
+                    <span className="leading-snug">Visual Flow Builder & Webhooks</span>
                   </li>
                 </ul>
               </div>
 
               <Button
                 onClick={() => handleSelectPlan("Pro")}
-                className="mt-6 w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-10"
+                className="mt-6 w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-10 px-3 whitespace-nowrap"
               >
                 Upgrade to Pro
               </Button>
@@ -526,36 +530,38 @@ export function SubscriptionBanner({ userName = "Sri" }: SubscriptionBannerProps
               <div>
                 <h3 className="font-bold text-lg text-foreground">Enterprise</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Dedicated infrastructure & scale</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-foreground">
+                <div className="mt-4 flex flex-wrap items-baseline gap-1.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight whitespace-nowrap">
                     ₹{PLAN_PRICES.Business[billingCycle].toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    /{billingCycle === "monthly" ? "mo" : "yr"}
+                  </span>
                 </div>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Unlimited WhatsApp Messages</span>
+                    <span className="leading-snug">Unlimited WhatsApp Messages</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Custom AI Model Fine-tuning</span>
+                    <span className="leading-snug">Custom AI Model Fine-tuning</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Dedicated Meta Account Rep</span>
+                    <span className="leading-snug">Dedicated Meta Account Rep</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Custom Webhooks & REST API</span>
+                    <span className="leading-snug">Custom Webhooks & REST API</span>
                   </li>
                 </ul>
               </div>
 
               <Button
                 onClick={() => handleSelectPlan("Business")}
-                className="mt-6 w-full rounded-xl bg-purple-900 hover:bg-purple-950 text-white font-semibold text-xs h-10"
+                className="mt-6 w-full rounded-xl bg-purple-900 hover:bg-purple-950 text-white font-semibold text-xs h-10 px-3 whitespace-nowrap"
               >
                 Upgrade to Enterprise
               </Button>
@@ -568,7 +574,7 @@ export function SubscriptionBanner({ userName = "Sri" }: SubscriptionBannerProps
       {/* Modal 2: Razorpay Checkout with Promocode Input & Breakdown   */}
       {/* ============================================================ */}
       <Dialog open={isCheckoutModalOpen} onOpenChange={setIsCheckoutModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7">
+        <DialogContent className="w-full max-w-lg sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-7">
           <DialogHeader>
             <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
               <CreditCard className="h-5 w-5" />
@@ -712,7 +718,7 @@ export function SubscriptionBanner({ userName = "Sri" }: SubscriptionBannerProps
       {/* Modal 3: View Usage Breakdown                                */}
       {/* ============================================================ */}
       <Dialog open={isUsageModalOpen} onOpenChange={setIsUsageModalOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6">
+        <DialogContent className="w-full max-w-md sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-purple-600" />
