@@ -83,8 +83,10 @@ export async function dispatchInboundToAiReply(
 
     // Deterministic, user-configured responders win over the LLM — the
     // caller already excludes messages a Flow consumed. Stand down only if
-    // a `new_message_received` automation is active (fires on every message)
-    // or a `keyword_match` automation actually matches this incoming message.
+    // an automation triggered by this message actually sends an immediate
+    // response. Delayed follow-ups (e.g. Follow-up Reminder starting with
+    // a `wait` step) or non-message automations (tagging, deals) must not
+    // suppress the AI assistant.
     const { data: autoResponders } = await db
       .from('automations')
       .select('id, trigger_type, trigger_config')
@@ -95,14 +97,39 @@ export async function dispatchInboundToAiReply(
 
     if (autoResponders && autoResponders.length > 0) {
       const userText = latestUserMessage(messages)
-      const matchesAnyResponder = autoResponders.some((a) => {
-        if (!a.trigger_type || a.trigger_type === 'new_message_received') return true
+      const matchingAutomations = autoResponders.filter((a) => {
         if (a.trigger_type === 'keyword_match') {
           return triggerMatches(a as Automation, { message_text: userText })
         }
-        return false
+        return a.trigger_type === 'new_message_received' || !a.trigger_type
       })
-      if (matchesAnyResponder) return
+
+      if (matchingAutomations.length > 0) {
+        const candidateIds = matchingAutomations.map((a) => a.id)
+        const { data: steps, error: stepsErr } = await db
+          .from('automation_steps')
+          .select('id, automation_id, step_type, position, parent_step_id, branch')
+          .in('automation_id', candidateIds)
+          .order('position', { ascending: true })
+
+        if (stepsErr) {
+          console.warn('[ai auto-reply] failed to load automation steps:', stepsErr)
+        }
+
+        const stepsByAutoId = new Map<string, StepSummary[]>()
+        for (const step of steps ?? []) {
+          const list = stepsByAutoId.get(step.automation_id) ?? []
+          list.push(step)
+          stepsByAutoId.set(step.automation_id, list)
+        }
+
+        const matchesImmediateResponder = matchingAutomations.some((a) => {
+          const autoSteps = stepsByAutoId.get(a.id) ?? []
+          return automationHasImmediateSend(autoSteps)
+        })
+
+        if (matchesImmediateResponder) return
+      }
     }
 
     // Account-wide throttle on the shared BYO key. The per-conversation
@@ -249,3 +276,72 @@ async function showTypingIndicator(
     console.warn('[ai auto-reply] typing indicator failed (continuing):', err)
   }
 }
+
+const IMMEDIATE_SEND_STEP_TYPES = new Set([
+  'send_message',
+  'send_buttons',
+  'send_list',
+  'send_template',
+])
+
+export interface StepSummary {
+  id?: string
+  automation_id?: string
+  step_type: string
+  position: number
+  parent_step_id?: string | null
+  branch?: string | null
+}
+
+/**
+ * Returns true if the automation will attempt to send an outbound message to
+ * the contact in its very first tick, before any `wait` step pauses execution.
+ *
+ * Delayed automations (such as a Follow-up Reminder whose position 0 is a
+ * `wait` step) do not send any message right now, so they must not suppress
+ * the AI assistant from replying to the incoming inquiry.
+ */
+export function automationHasImmediateSend(steps: StepSummary[]): boolean {
+  if (!steps || steps.length === 0) return false
+
+  const rootSteps = steps
+    .filter((s) => !s.parent_step_id)
+    .sort((a, b) => a.position - b.position)
+
+  for (const step of rootSteps) {
+    // If execution hits a `wait` step before any message was sent,
+    // execution halts and enqueues for later — no message is sent now.
+    if (step.step_type === 'wait') {
+      return false
+    }
+
+    if (IMMEDIATE_SEND_STEP_TYPES.has(step.step_type)) {
+      return true
+    }
+
+    if (step.step_type === 'condition' && step.id) {
+      const childSteps = steps.filter((s) => s.parent_step_id === step.id)
+      const yesSteps = childSteps
+        .filter((s) => s.branch === 'yes')
+        .sort((a, b) => a.position - b.position)
+      const noSteps = childSteps
+        .filter((s) => s.branch === 'no')
+        .sort((a, b) => a.position - b.position)
+
+      const branchHasSend = (bSteps: StepSummary[]) => {
+        for (const child of bSteps) {
+          if (child.step_type === 'wait') return false
+          if (IMMEDIATE_SEND_STEP_TYPES.has(child.step_type)) return true
+        }
+        return false
+      }
+
+      if (branchHasSend(yesSteps) || branchHasSend(noSteps)) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+

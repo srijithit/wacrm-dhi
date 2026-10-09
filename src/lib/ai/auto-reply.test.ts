@@ -12,7 +12,15 @@ const h = vi.hoisted(() => ({
   sendTypingIndicator: vi.fn(),
   state: {
     conv: null as Record<string, unknown> | null,
-    autoResponders: [] as { id: string }[],
+    autoResponders: [] as { id: string; trigger_type?: string; trigger_config?: unknown }[],
+    automationSteps: [] as {
+      id?: string
+      automation_id: string
+      step_type: string
+      position: number
+      parent_step_id?: string | null
+      branch?: string | null
+    }[],
     claim: true as boolean,
     updatePayload: null as Record<string, unknown> | null,
     rpcCalls: [] as { name: string; args: unknown }[],
@@ -44,6 +52,20 @@ vi.mock('./admin-client', () => ({
         }
         return chain
       }
+      if (table === 'automation_steps') {
+        const chain = {
+          select: () => chain,
+          in: (_col: string, ids: string[]) => {
+            const filtered = h.state.automationSteps.filter((s) =>
+              ids.includes(s.automation_id),
+            )
+            return {
+              order: () => Promise.resolve({ data: filtered, error: null }),
+            }
+          },
+        }
+        return chain
+      }
       // conversations
       return {
         select: () => ({
@@ -65,7 +87,7 @@ vi.mock('./admin-client', () => ({
   }),
 }))
 
-import { dispatchInboundToAiReply } from './auto-reply'
+import { dispatchInboundToAiReply, automationHasImmediateSend } from './auto-reply'
 
 const ARGS = {
   accountId: 'acct-1',
@@ -97,6 +119,7 @@ beforeEach(() => {
     ai_reply_count: 0,
   }
   h.state.autoResponders = []
+  h.state.automationSteps = []
   h.state.claim = true
   h.state.updatePayload = null
   h.state.rpcCalls = []
@@ -134,12 +157,36 @@ describe('dispatchInboundToAiReply — eligibility gates', () => {
     expect(systemPrompt).toContain('Returns accepted within 30 days.')
   })
 
-  it('stands down when an active message-level automation exists', async () => {
+  it('stands down when an active message-level automation exists with immediate send step', async () => {
     h.state.autoResponders = [{ id: 'auto-1' }]
+    h.state.automationSteps = [
+      { automation_id: 'auto-1', step_type: 'send_message', position: 0 },
+    ]
     await dispatchInboundToAiReply(ARGS)
     expect(h.generateReply).not.toHaveBeenCalled()
     expect(h.engineSendText).not.toHaveBeenCalled()
     expect(h.sendTypingIndicator).not.toHaveBeenCalled()
+  })
+
+  it('does NOT stand down when an active automation starts with a wait step (delayed follow-up)', async () => {
+    h.state.autoResponders = [{ id: 'auto-followup', trigger_type: 'new_message_received' }]
+    h.state.automationSteps = [
+      { automation_id: 'auto-followup', step_type: 'wait', position: 0 },
+      { automation_id: 'auto-followup', step_type: 'send_message', position: 1 },
+    ]
+    await dispatchInboundToAiReply(ARGS)
+    expect(h.generateReply).toHaveBeenCalled()
+    expect(h.engineSendText).toHaveBeenCalled()
+  })
+
+  it('does NOT stand down when an active automation has no send steps (e.g. tagging only)', async () => {
+    h.state.autoResponders = [{ id: 'auto-tag', trigger_type: 'new_message_received' }]
+    h.state.automationSteps = [
+      { automation_id: 'auto-tag', step_type: 'add_tag', position: 0 },
+    ]
+    await dispatchInboundToAiReply(ARGS)
+    expect(h.generateReply).toHaveBeenCalled()
+    expect(h.engineSendText).toHaveBeenCalled()
   })
 
   it('does not send when the atomic slot claim loses the race', async () => {
@@ -291,3 +338,81 @@ describe('dispatchInboundToAiReply — handoff', () => {
     })
   })
 })
+
+describe('automationHasImmediateSend', () => {
+  it('returns false for empty steps', () => {
+    expect(automationHasImmediateSend([])).toBe(false)
+  })
+
+  it('returns true when root position 0 is send_message', () => {
+    expect(
+      automationHasImmediateSend([
+        { step_type: 'send_message', position: 0 },
+      ]),
+    ).toBe(true)
+  })
+
+  it('returns true when root position 0 is send_buttons / send_list / send_template', () => {
+    expect(automationHasImmediateSend([{ step_type: 'send_buttons', position: 0 }])).toBe(true)
+    expect(automationHasImmediateSend([{ step_type: 'send_list', position: 0 }])).toBe(true)
+    expect(automationHasImmediateSend([{ step_type: 'send_template', position: 0 }])).toBe(true)
+  })
+
+  it('returns false when position 0 is wait (delayed reminder template)', () => {
+    expect(
+      automationHasImmediateSend([
+        { step_type: 'wait', position: 0 },
+        { step_type: 'send_message', position: 1 },
+      ]),
+    ).toBe(false)
+  })
+
+  it('returns false when wait step precedes send step', () => {
+    expect(
+      automationHasImmediateSend([
+        { step_type: 'add_tag', position: 0 },
+        { step_type: 'wait', position: 1 },
+        { step_type: 'send_message', position: 2 },
+      ]),
+    ).toBe(false)
+  })
+
+  it('returns true when action step precedes send step before wait', () => {
+    expect(
+      automationHasImmediateSend([
+        { step_type: 'add_tag', position: 0 },
+        { step_type: 'send_message', position: 1 },
+        { step_type: 'wait', position: 2 },
+      ]),
+    ).toBe(true)
+  })
+
+  it('returns false when no steps send messages', () => {
+    expect(
+      automationHasImmediateSend([
+        { step_type: 'add_tag', position: 0 },
+        { step_type: 'assign_conversation', position: 1 },
+      ]),
+    ).toBe(false)
+  })
+
+  it('returns true when condition branch sends a message immediately', () => {
+    expect(
+      automationHasImmediateSend([
+        { id: 'c1', step_type: 'condition', position: 0, parent_step_id: null },
+        { id: 's1', step_type: 'send_message', position: 0, parent_step_id: 'c1', branch: 'yes' },
+      ]),
+    ).toBe(true)
+  })
+
+  it('returns false when condition branch starts with wait', () => {
+    expect(
+      automationHasImmediateSend([
+        { id: 'c1', step_type: 'condition', position: 0, parent_step_id: null },
+        { id: 'w1', step_type: 'wait', position: 0, parent_step_id: 'c1', branch: 'yes' },
+        { id: 's1', step_type: 'send_message', position: 1, parent_step_id: 'c1', branch: 'yes' },
+      ]),
+    ).toBe(false)
+  })
+})
+
