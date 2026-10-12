@@ -46,6 +46,7 @@ export function MetaWalletCard({ wabaId: propWabaId, canEdit = true }: MetaWalle
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [dismissedAlert, setDismissedAlert] = useState(false)
 
   // Form fields
   const [amount, setAmount] = useState('')
@@ -211,23 +212,34 @@ export function MetaWalletCard({ wabaId: propWabaId, canEdit = true }: MetaWalle
 
         <CardContent className="space-y-5 pt-0">
           {/* Critical Alerts */}
-          {summary?.insufficient_funds_detected && (
+          {summary?.insufficient_funds_detected && !dismissedAlert && (
             <Alert variant="destructive" className="border-red-500/30 bg-red-500/10 text-red-400">
               <ShieldAlert className="h-4 w-4" />
-              <AlertTitle className="font-semibold">Meta Balance Empty (Error 131042)</AlertTitle>
+              <div className="flex items-center justify-between">
+                <AlertTitle className="font-semibold">Meta Balance Empty (Error 131042)</AlertTitle>
+                <button
+                  type="button"
+                  onClick={() => setDismissedAlert(true)}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Dismiss
+                </button>
+              </div>
               <AlertDescription className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
                 <span>
                   Meta has rejected template messages because your prepaid balance is ₹0.
                   Please top up on Meta immediately to resume message delivery.
                 </span>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => window.open(metaBillingUrl, '_blank', 'noopener,noreferrer')}
-                  className="h-7 shrink-0 text-xs gap-1 font-semibold"
-                >
-                  Top Up on Meta ↗
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => window.open(metaBillingUrl, '_blank', 'noopener,noreferrer')}
+                    className="h-7 shrink-0 text-xs gap-1 font-semibold"
+                  >
+                    Top Up on Meta ↗
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           )}

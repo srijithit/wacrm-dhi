@@ -194,16 +194,41 @@ export async function computeWalletSummary(
   let insufficientFundsDetected = false
 
   if (convoIds.length > 0) {
-    // Check for any 131042 errors
-    const { data: failedMessages } = await supabase
+    // Check for recent 131042 errors (within last 24h, without a newer top-up or newer successful message)
+    const { data: recentErrors } = await supabase
       .from('messages')
-      .select('id, error_code')
+      .select('id, created_at, error_code')
       .in('conversation_id', convoIds)
       .eq('error_code', 131042)
+      .order('created_at', { ascending: false })
       .limit(1)
 
-    if (failedMessages && failedMessages.length > 0) {
-      insufficientFundsDetected = true
+    if (recentErrors && recentErrors.length > 0) {
+      const errTime = new Date(recentErrors[0].created_at).getTime()
+      const now = Date.now()
+      const isWithin24Hours = now - errTime < 24 * 60 * 60 * 1000
+
+      // Check if a top-up was logged after this error
+      const hasTopupAfterError = config.topups.some((t) => {
+        const topupTime = new Date(t.date || t.created_at).getTime()
+        return topupTime >= errTime
+      })
+
+      // Check if any template message was successfully sent after this error
+      const { data: newerSent } = await supabase
+        .from('messages')
+        .select('id')
+        .in('conversation_id', convoIds)
+        .eq('content_type', 'template')
+        .gt('created_at', recentErrors[0].created_at)
+        .in('status', ['sent', 'delivered', 'read'])
+        .limit(1)
+
+      const hasSentAfterError = Boolean(newerSent && newerSent.length > 0)
+
+      if (isWithin24Hours && !hasTopupAfterError && !hasSentAfterError) {
+        insufficientFundsDetected = true
+      }
     }
 
     // Load templates mapped by name to their category

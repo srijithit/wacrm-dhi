@@ -118,7 +118,18 @@ describe('meta-wallet', () => {
                   if (cols.includes('error_code')) {
                     return {
                       eq: () => ({
-                        limit: () => Promise.resolve({ data: [{ id: 'm-err', error_code: 131042 }] }),
+                        order: () => ({
+                          limit: () =>
+                            Promise.resolve({
+                              data: [
+                                {
+                                  id: 'm-err',
+                                  created_at: new Date().toISOString(),
+                                  error_code: 131042,
+                                },
+                              ],
+                            }),
+                        }),
                       }),
                     }
                   }
@@ -131,6 +142,11 @@ describe('meta-wallet', () => {
                             { id: 'm-2', template_name: 'otp_verification', status: 'sent' },
                           ],
                         }),
+                      gt: () => ({
+                        in: () => ({
+                          limit: () => Promise.resolve({ data: [] }),
+                        }),
+                      }),
                     }),
                   }
                 },
