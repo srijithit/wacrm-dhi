@@ -22,16 +22,16 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "ChatIQ",
+    template: "%s — ChatIQ",
   },
-  description: "Self-hostable CRM template for WhatsApp.",
+  description: "ChatIQ — WhatsApp CRM platform.",
   robots: {
     index: false,
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon" }],
+    icon: [{ url: "/icon.png" }],
   },
   formatDetection: {
     email: false,

@@ -22,8 +22,8 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed", // primary (Hostinger-aligned purple)
-          borderRadius: 6,
+          background: "linear-gradient(135deg, #00B4D8 0%, #0066FF 100%)",
+          borderRadius: 8,
         }}
       >
         <svg
