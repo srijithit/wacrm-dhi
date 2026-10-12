@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { SettingsPanelHead } from './settings-panel-head';
+import { MetaWalletCard } from './meta-wallet-card';
 import {
   Accordion,
   AccordionItem,
@@ -737,6 +738,9 @@ export function WhatsAppConfig() {
             )}
           </Alert>
         )}
+
+        {/* Meta WhatsApp Prepaid Balance & Billing Tracker */}
+        <MetaWalletCard wabaId={wabaId || config?.waba_id} canEdit={canEditSettings} />
 
         {/* API Credentials */}
         <Card>
