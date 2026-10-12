@@ -642,6 +642,26 @@ export async function uploadResumableMedia(
   return { handle: uploadData.h }
 }
 
+/**
+ * Query the Meta App ID associated with an access token via GET /app.
+ * Used for dynamic app ID discovery in multi-WABA environments so
+ * Resumable Upload uses the exact app that issued the token.
+ */
+export async function getAppIdFromToken(accessToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${META_API_BASE}/app?access_token=${encodeURIComponent(accessToken)}`,
+      { method: 'GET' },
+    )
+    if (!res.ok) return null
+    const data = (await res.json()) as { id?: string }
+    return data.id ?? null
+  } catch {
+    return null
+  }
+}
+
+
 // ============================================================
 // Template submission (Business Management API)
 // ============================================================

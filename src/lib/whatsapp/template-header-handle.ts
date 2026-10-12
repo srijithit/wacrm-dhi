@@ -1,4 +1,4 @@
-import { uploadResumableMedia } from '@/lib/whatsapp/meta-api'
+import { uploadResumableMedia, getAppIdFromToken } from '@/lib/whatsapp/meta-api'
 import { MEDIA_HEADER_SPECS, isMediaHeaderKind } from '@/lib/whatsapp/media-header-types'
 import type { TemplatePayload } from '@/lib/whatsapp/template-validators'
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
@@ -34,7 +34,12 @@ export async function ensureMediaHeaderHandle(
 
   const spec = MEDIA_HEADER_SPECS[kind]
 
-  const appId = process.env.META_APP_ID
+  // Resolve Meta App ID:
+  // In multi-WABA setups (or when META_APP_ID is not configured in hosting like Render),
+  // dynamically discover the App ID that issued this access token via GET /app.
+  // Falls back to process.env.META_APP_ID.
+  const tokenAppId = await getAppIdFromToken(accessToken)
+  const appId = tokenAppId || process.env.META_APP_ID
   if (!appId) {
     throw new Error(
       'Media-header templates need META_APP_ID set (used for Meta’s Resumable Upload). Add it to your environment, or remove the media header.',

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Stub the Meta resumable upload so the helper is tested in isolation.
+// Stub the Meta resumable upload and app discovery so the helper is tested in isolation.
 vi.mock('./meta-api', () => ({
   uploadResumableMedia: vi.fn(async () => ({ handle: 'HANDLE123' })),
+  getAppIdFromToken: vi.fn(async () => null),
 }));
 
 // The SSRF guard does a real DNS lookup, so stub it — the fixtures below use
@@ -12,7 +13,7 @@ vi.mock('@/lib/webhooks/ssrf', () => ({
 }));
 
 import { ensureMediaHeaderHandle } from './template-header-handle';
-import { uploadResumableMedia } from './meta-api';
+import { uploadResumableMedia, getAppIdFromToken } from './meta-api';
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf';
 import type { TemplatePayload } from './template-validators';
 
@@ -50,6 +51,8 @@ describe('ensureMediaHeaderHandle', () => {
     vi.mocked(uploadResumableMedia).mockClear();
     vi.mocked(isDeliverableUrl).mockClear();
     vi.mocked(isDeliverableUrl).mockResolvedValue(true);
+    vi.mocked(getAppIdFromToken).mockReset();
+    vi.mocked(getAppIdFromToken).mockResolvedValue(null);
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -70,9 +73,20 @@ describe('ensureMediaHeaderHandle', () => {
     expect(p.header_handle).toBe('existing');
   });
 
-  it('throws an actionable error when META_APP_ID is unset', async () => {
+  it('throws an actionable error when META_APP_ID is unset and cannot be discovered', async () => {
     const p = payload();
     await expect(ensureMediaHeaderHandle(p, 'tok')).rejects.toThrow(/META_APP_ID/);
+  });
+
+  it('auto-discovers the App ID from the token when META_APP_ID is unset', async () => {
+    vi.mocked(getAppIdFromToken).mockResolvedValue('discovered-app-id');
+    vi.stubGlobal('fetch', vi.fn(async () => mediaResponse('image/jpeg', 2048)));
+    const p = payload();
+    await ensureMediaHeaderHandle(p, 'tok');
+    expect(uploadResumableMedia).toHaveBeenCalledWith(
+      expect.objectContaining({ appId: 'discovered-app-id' }),
+    );
+    expect(p.header_handle).toBe('HANDLE123');
   });
 
   describe('image headers (unchanged from #230)', () => {
